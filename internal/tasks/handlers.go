@@ -1,44 +1,74 @@
 package tasks
 
 import (
-	"fmt"
+	"encoding/json"
+	"log"
+	"net/http"
 	"strconv"
 )
 
 type HandlerInterface interface {
-	AddHandler(task string) (string, error)
+	AddHandler(w http.ResponseWriter, r *http.Request)
+	RemoveHandler(w http.ResponseWriter, r *http.Request)
 }
 
 type TaskHandler struct {
-	service *TaskService
+	s *TaskService
 }
 
-func NewTaskHandler(s *TaskService) *TaskHandler {
-	return &TaskHandler{service: s}
+func NewTaskHandler(service *TaskService) *TaskHandler {
+	return &TaskHandler{service}
 }
 
-func (h *TaskHandler) AddHandler(task string) (string, error) {
-	fmt.Printf("[INFO]: handler func\n")
-
-	h.service.AddService(task)
-
-	return "Success", nil
-}
-
-func (h *TaskHandler) RemoveHandler(id string) (string, error) {
-	fmt.Printf("[INFO]: remove handler")
-	intId, err := strconv.Atoi(id)
-
-	if err != nil {
-		return "", fmt.Errorf("[ERROR]: failed convert string to int")
+func (h *TaskHandler) AddHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 
-	h.service.RemoveTask(intId)
-	return "success", nil
+	log.Println("[INFO]: Handle add task request")
+	var task TaskDTO
+
+	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		log.Fatalln("[ERROR]: invalid request body")
+
+	}
+
+	log.Println("[INFO]: request body successfuly parsed")
+
+	defer r.Body.Close()
+
+	h.s.AddService(task)
+
+	log.Println("[INFO]: handler ends work")
+
 }
 
-func (h TaskHandler) ListHandler() (map[int]string, error) {
-	tasks, _ := h.service.ListTasks()
+func (h *TaskHandler) RemoveHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+	log.Println("[INFO]: Handle remove task request")
 
-	return tasks, nil
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+	}
+
+	h.s.RemoveTask(id)
+
+	log.Println("[INFO]: handler ends work")
+}
+
+func (h *TaskHandler) ListHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+
+	log.Println("[INFO]: Handle get list of tasks")
+
+	tasks := h.s.ListTasks()
+	json.NewEncoder(w).Encode(tasks)
+
+	log.Println("[INFO]: handle ends work")
 }

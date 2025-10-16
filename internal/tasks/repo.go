@@ -1,39 +1,39 @@
 package tasks
 
-import "fmt"
+import "log"
 
 type Repository interface {
-	AddTask(task string) (string, error)
+	AddTask(task TaskDTO) (string, error)
 	RemoveTask(id int) (string, error)
-	ListTasks() (map[int]string, error)
+	ListTasks() (map[int]TaskDTO, error)
 }
 
 type TaskRepository struct {
-	storage   map[int]string
+	storage   map[int]TaskDTO
 	currentId int
 }
 
 func NewTaskRepository() *TaskRepository {
-	return &TaskRepository{storage: map[int]string{}, currentId: 0}
+	return &TaskRepository{storage: map[int]TaskDTO{}}
 }
 
-func (r *TaskRepository) AddTask(task string) (string, error) {
-	fmt.Printf("[INFO]: repository add task\n")
+func (r *TaskRepository) AddTask(task TaskDTO) (string, error) {
+	log.Printf("[INFO]: Set task into storage\n")
 
 	r.currentId++
+	task.Id = r.currentId
 	r.storage[r.currentId] = task
-	fmt.Println(r.storage)
 
 	return "Successful", nil
 }
 
 func (r *TaskRepository) RemoveTask(id int) (string, error) {
-	fmt.Printf("[INFO]: deleting task\n")
+	log.Printf("[INFO]: Deleting task from storage\n")
 	delete(r.storage, id)
 
 	return "Successful", nil
 }
 
-func (r TaskRepository) ListTasks() (map[int]string, error) {
-	return r.storage, nil
+func (r *TaskRepository) ListTasks() map[int]TaskDTO {
+	return r.storage
 }

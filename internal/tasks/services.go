@@ -1,9 +1,11 @@
 package tasks
 
-import "fmt"
+import "log"
 
 type Service interface {
-	AddService(task string) (string, error)
+	AddService(task TaskDTO)
+	RemoveTask(id int)
+	ListTasks() (map[int]TaskDTO, error)
 }
 
 type TaskService struct {
@@ -14,28 +16,29 @@ func NewTaskService(r *TaskRepository) *TaskService {
 	return &TaskService{repo: r}
 }
 
-func (s *TaskService) AddService(task string) (string, error) {
-	fmt.Printf("[INFO]: add service\n")
+func (s *TaskService) AddService(task TaskDTO) {
+	log.Printf("[INFO]: AddService starts work\n")
 
 	if _, err := s.repo.AddTask(task); err != nil {
-		return "", fmt.Errorf("[ERROR]: something went wrong")
+		log.Fatalln("[ERROR]: something went wrong")
 	}
 
-	return "Success", nil
+	log.Println("[INFO]: AddService ends work")
+
 }
 
-func (s *TaskService) RemoveTask(id int) (string, error) {
-	fmt.Printf("[INFO]: deleting task service\n")
+func (s *TaskService) RemoveTask(id int) {
+	log.Printf("[INFO]: Delete service starts work\n")
 
 	s.repo.RemoveTask(id)
 
-	return "Successful", nil
+	log.Println("[INFO]: Delete service ends work")
 }
 
-func (s TaskService) ListTasks() (map[int]string, error) {
-	fmt.Printf("[INFO]: getting tasks storage\n")
+func (s *TaskService) ListTasks() map[int]TaskDTO {
+	log.Printf("[INFO]: getting tasks storage\n")
 
-	tasks, _ := s.repo.ListTasks()
+	tasks := s.repo.ListTasks()
 
-	return tasks, nil
+	return tasks
 }
